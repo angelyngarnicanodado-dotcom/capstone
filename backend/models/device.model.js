@@ -1,56 +1,100 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const DeviceSchema = new mongoose.Schema({
-    deviceID: {
-        type: String,
-        required: true,
+  // ===== DEVICE INFO =====
+  deviceID: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+
+  owner:{
+        type: mongoose.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    isOnline: {
-        type: Boolean,
-        default: false,
-    },
-    lastUpdate: {
-        type: Number,
-        required: true,
-        default: 0
+    
+  isOnline: {
+    type: Boolean,
+    default: false,
+  },
+
+  lastUpdate: {
+    type: Number,
+    default: Date.now,
+  },
+
+  // ===== ENVIRONMENT DATA =====
+  temperature: {
+    type: Number,
+    default: 0,
+  },
+
+  humidity: {
+    type: Number,
+    default: 0,
+  },
+
+  daysElapsed: {
+    type: Number,
+    default: 0,
+  },
+
+  incubationStarted: {
+    type: Boolean,
+    default: false,
+  },
+
+  // ===== EGG TURNING CONTROL =====
+  eggTurning: {
+    mode: {
+      type: String,
+      enum: ["OFF", "MANUAL", "AUTO"],
+      default: "AUTO",
     },
 
-    temperature: {
-        type: Number,
-        required: true,
-        default: 0
+    isTurning: {
+      type: Boolean,
+      default: false,
     },
 
-    Humidity: {
-        type: Number,
-        required: true,
-        default: 0
+    autoStopDay: {
+      type: Number,
+      default: 16, // stop turning at day 16
+    },
+  },
+
+  // ===== LED LIGHT CONTROL =====
+  ledLight: {
+    mode: {
+      type: String,
+      enum: ["OFF", "MANUAL", "AUTO"],
+      default: "AUTO",
     },
 
-    Days_Elapse: {
-        type: Number,
-        required: true,
-        default: 0
-    }
+    isOn: {
+      type: Boolean,
+      default: false,
+    },
+
+    autoStopDay: {
+      type: Number,
+      default: 10, // stop LED at day 10
+    },
+  },
+
+  // ===== MAGNETIC DOOR SENSOR =====
+  doorSensor: {
+    isClosed: {
+      type: Boolean,
+      default: false,
+    },
+
+    lastClosedTime: {
+      type: Number,
+      default: 0,
+    },
+  },
 });
 
-// ===== VIRTUAL: Turning Status =====
-// Turning stops AFTER day 16
-DeviceSchema.virtual('turningStatus').get(function () {
-    if (this.Days_Elapse >= 17) return "Stopped";
-    return "Active";
-});
-
-// ===== VIRTUAL: Day Status =====
-// Day 21 → "Ready for Hatching"
-DeviceSchema.virtual('dayStatus').get(function () {
-    if (this.Days_Elapse >= 21) return "Ready for Hatching";
-    return `Day ${this.Days_Elapse}`;
-});
-
-// Enable virtuals in JSON
-DeviceSchema.set('toJSON', { virtuals: true });
-DeviceSchema.set('toObject', { virtuals: true });
-
-const Device = mongoose.model('Device', DeviceSchema);
-export default Device;
+export default mongoose.model("Device", DeviceSchema);
