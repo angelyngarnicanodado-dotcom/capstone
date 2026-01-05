@@ -57,10 +57,11 @@ const IncubatorDashboard = () => {
         <Image source={logo} style={{ width: 50, height: 50 }} />
         <Text className="text-3xl font-extrabold text-teal-800">Home</Text>
       </View>
-     <View className="bg-white rounded-xl p-4 shadow mb-5">
+     <View className="bg-white rounded-xl p-4 shadow mb-6 border border-teal-500">
+
   {/* Header */}
-  <View className="flex-row justify-between items-center mb-2">
-    <Text className="font-bold text-lg text-gray-800">
+  <View className="flex-row justify-between items-center mb-3">
+    <Text className="font-bold text-lg text-teal-800">
       INC-062702
     </Text>
     <Text className="text-green-600 font-semibold">
@@ -68,7 +69,7 @@ const IncubatorDashboard = () => {
     </Text>
   </View>
 
-  <Text className="text-gray-500 mb-3">
+  <Text className="text-gray-600 mb-3">
     System Standby
   </Text>
 
@@ -85,11 +86,11 @@ const IncubatorDashboard = () => {
   </View>
 
   {/* Updates */}
-  <View className="border-t pt-2">
-    <Text className="text-sm text-gray-600">
+  <View className="border-t pt-3">
+    <Text className="text-sm text-gray-700">
       🔁 Last egg turn: 45 mins ago
     </Text>
-    <Text className="text-sm text-gray-600">
+    <Text className="text-sm text-gray-700">
       🚪 Door: Closed
     </Text>
   </View>

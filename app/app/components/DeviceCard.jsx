@@ -17,12 +17,12 @@ const DeviceCard = ({ device, pressEventHandler }) => {
   
   return (
     <TouchableOpacity 
-      className="bg-white mx-4 mt-4 p-4 rounded-xl shadow-md border border-gray-100 active:bg-gray-50"
+      className="bg-white mx-4 mt-4 p-4 rounded-xl shadow-md border border-amber-200 active:bg-gray-50"
       onPress={() => pressEventHandler(device)} 
       activeOpacity={0.8}
     >
       {/* Header with Slate Gray-Blue ID and Online Status */}
-      <View className="flex-row justify-between items-start pb-3 mb-3 border-b border-gray-100">
+      <View className="flex-row justify-between items-start pb-3 mb-3 border-b border-teal-500">
         <View className="flex-1">
           <Text className="text-xl font-extrabold text-slate-500">{device.deviceID}</Text>
           <Text className="text-xs text-gray-400">

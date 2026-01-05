@@ -2,263 +2,225 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   TextInput,
-  Modal
+  Modal,
+  ScrollView,
 } from "react-native";
 import { MaterialCommunityIcons, MaterialIcons, AntDesign, Octicons } from '@expo/vector-icons'; 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, router, Redirect, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import loadingOverlay from "../components/LoadingOverlay";
 import axiosInstance from "@/axiosConfig";
 import Toast from "react-native-toast-message";
-import { reload } from "expo-router/build/global-state/routing";
 
+// Reusable Metric Card matching the DeviceCard Style
 const MetricCard = ({ title, value, unit, iconName, color }) => (
   <View className={`w-1/2 p-2`}>
     <View className={`flex-row items-center p-3 rounded-xl shadow-sm border border-gray-100 ${color}`}>
-      <MaterialCommunityIcons name={iconName} size={24} color="#374151" />
+      <MaterialCommunityIcons name={iconName} size={24} color="#475569" />
       <View className="ml-3">
-        <Text className="text-lg font-bold text-gray-800">{value}{unit}</Text>
-        <Text className="text-xs text-gray-500">{title}</Text>
+        <Text className="text-lg font-bold text-slate-800">{value}{unit}</Text>
+        <Text className="text-xs text-slate-500 font-medium">{title}</Text>
       </View>
     </View>
   </View>
 );
 
-const DeviceDetails =()=>{
-    const {deviceID} = useLocalSearchParams();
-    const [isLoading, setIsLoading] = useState(false);
-    const [device, setDevice] = useState({});
-    const [showRenameModal, setShowRenameModal] = useState(false);
-    const [newDeviceID, setNewDeviceID] = useState("");
-    
-    useEffect(()=>{
-        const interval = setInterval(() => {
-            setIsLoading(true);
-            reloadData();
-            setIsLoading(false);
-        }, 20000);
-        
-        return () => clearInterval(interval);
-    },[]);
+const DeviceDetails = () => {
+  const { deviceID: initialDeviceID } = useLocalSearchParams();
+  const [isLoading, setIsLoading] = useState(false);
+  const [device, setDevice] = useState<any>({});
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [newDeviceID, setNewDeviceID] = useState("");
 
-    const reloadData =async()=>{
-        try {
-            const response = await axiosInstance.get(`/device/get-a-device/${deviceID}`,{ withCredentials: true });
-            if (!response.data.success) {
-                    Toast.show({
-                        type: "error",
-                        text1: "❌ Failed to load device",
-                        text2: response.data.message,
-                    });
-                    setDevice({});
-            } else {
-                setDevice(response.data.data[0]);
-            }
-        } catch (error) {
-            Toast.show({
-                type: "error",
-                text1: "❌ Error loading device",
-                text2: error.message,
-            });
-            setDevice({});
-        }
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(() => {
+      reloadData();
+    }, 15000); // Auto-refresh every 15 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    await reloadData();
+    setIsLoading(false);
+  };
+
+  const reloadData = async () => {
+    try {
+      const response = await axiosInstance.get(`/device/get-a-device/${initialDeviceID}`, { withCredentials: true });
+      if (response.data.success) {
+        setDevice(response.data.data[0]);
+      }
+    } catch (error: any) {
+      console.error("Error refreshing data:", error.message);
     }
+  };
 
-    const handleRenamePress = ()=>{
-        setShowRenameModal(true);
+  const handleRenamePress = () => setShowRenameModal(true);
+  const cancelRenamePress = () => {
+    setShowRenameModal(false);
+    setNewDeviceID("");
+  };
+
+  const confirmRenamePress = async () => {
+    if (!newDeviceID) return;
+    setShowRenameModal(false);
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.put(`/device/update/${device._id}`, { deviceID: newDeviceID }, { withCredentials: true });
+      if (response.data.success) {
+        Toast.show({ type: 'success', text1: '✅ Updated', text2: 'Device ID changed successfully!' });
+        setDevice(response.data.data[0]);
+        setNewDeviceID("");
+      } else {
+        Toast.show({ type: 'error', text1: '❌ Update Failed', text2: response.data.message });
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: '❌ Error', text2: error.message });
     }
+    setIsLoading(false);
+  };
 
-    const cancelRenamePress = ()=>{
-        setShowRenameModal(false);
-    }
+  return (
+    <SafeAreaView className="flex-1 bg-gray-50">
+      {isLoading && loadingOverlay()}
 
-    const confirmRenamePress = async () => {
-        setShowRenameModal(false);
-        setIsLoading(true);
-        try{
-            
-            const data={"deviceID": newDeviceID};
-            const response = await axiosInstance.put(`/device/update/${device._id}`, data,  {withCredentials: true});
-            if(!response.data.success){
-                Toast.show({
-                    type: 'error',
-                    text1: '❌ Device ID update failed!',
-                    text2: response.data.message
-                });
-                setShowRenameModal(true);
-            }else{
-                Toast.show({
-                    type: 'error',
-                    text1: '✅ Device ID updated successfully!',
-                    text2: response.data.message
-                });
-                setNewDeviceID("");
-                setDevice(response.data.data[0]);
-            }
-        }catch(error){
-            console.log("Error while updating the Device ID! - "+error.message);
-            Toast.show({
-                    type: 'error',
-                    text1: '❌ Error while updating the Device ID!',
-                    text2: error.message
-            });
-        }
-        setIsLoading(false); 
-    };
-
-    return(
-        <SafeAreaView className="flex-1 bg-gray-100">
-            {isLoading && loadingOverlay()}
-            {Object.keys(device).length > 0 && (
-                <>
-                    <View className="flex flex-col p-4 bg-white shadow-sm border-b border-gray-100 pt-10">
-                        <View className="w-full flex flex-row items-center">
-                            <Text className="flex-1 text-3xl font-extrabold text-green-700">{device.deviceID}</Text>
-                            <TouchableOpacity
-                                onPress={handleRenamePress}
-                                className="flex flex-row gap-2 bg-blue-600 py-3 px-4 rounded-lg mx-6"
-                            >
-                                <MaterialIcons name={"edit-square"} size={15} color="white" />
-                                <Text className="text-white text-center font-semibold text-sm">
-                                    edit
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        
-                        <View className="w-full flex flex-row items-center">
-                            <Text className="text-base text-gray-500">Current status: </Text><Octicons name="dot-fill" size={30} color={device.isOnline ? ("green"):("red")}/>
-                        </View>
-                         
-                    </View>
-
-                    <View className="bg-white mx-4 mt-4 p-4 rounded-xl shadow-md border border-gray-100 active:bg-gray-50">
-
-                    <View className="flex-row flex-wrap -m-2">
-                        <MetricCard 
-                        title="Humidity" 
-                        value={device.humidity} 
-                        unit="%" 
-                        iconName="water-percent" 
-                        color="bg-blue-50" 
-                        />
-                        <MetricCard 
-                        title="Temperature" 
-                        value={device.temperature} 
-                        unit="°C" 
-                        iconName="temperature-celsius" 
-                        color="bg-red-50" 
-                        />
-                    </View>
-                    <View className="flex flex-col w-auto h-auto mx-3 mt-2 hover:bg-blue-200 border border-gray-200">
-                        <Text className="text-lg font-extrabold text-gray-900 mx-3 my-2">Field 1</Text>
-                        <View className="flex flex-row">
-                            <MetricCard
-                            title="Water Level" 
-                            value={device.isWaterLevelLow1} 
-                            unit="" 
-                            iconName="water-boiler" 
-                            color="bg-cyan-50" 
-                            />
-                            <MetricCard 
-                            title="Soil Moisture" 
-                            value={device.soilMoisture1} 
-                            unit=" " 
-                            iconName="spa" 
-                            color="bg-amber-50" 
-                            />
-                        </View>
-                        </View>
-                        
-                        <View className="flex flex-col w-auto h-auto mx-3 border border-gray-200 hover:bg-blue-200">
-                        <Text className="text-lg font-extrabold text-gray-900 mx-3 my-2">Field 2</Text>
-                        <View className="flex flex-row">
-                            <MetricCard
-                            title="Water Level" 
-                            value={device.isWaterLevelLow2} 
-                            unit="" 
-                            iconName="water-boiler" 
-                            color="bg-cyan-50" 
-                            />
-                            <MetricCard 
-                            title="Soil Moisture" 
-                            value={device.soilMoisture2} 
-                            unit=" " 
-                            iconName="spa" 
-                            color="bg-amber-50" 
-                            />
-                        </View>
-                        </View>
-
-                        <View className="flex flex-col w-auto h-auto mx-3 border border-gray-200 hover:bg-blue-200">
-                        <Text className="text-lg font-extrabold text-gray-900 mx-3 my-2">Field 3</Text>
-                        <View className="flex flex-row">
-                            <MetricCard
-                            title="Water Level" 
-                            value={device.isWaterLevelLow3} 
-                            unit="" 
-                            iconName="water-boiler" 
-                            color="bg-cyan-50" 
-                            />
-                            <MetricCard 
-                            title="Soil Moisture" 
-                            value={device.soilMoisture3} 
-                            unit=" " 
-                            iconName="spa" 
-                            color="bg-amber-50" 
-                            />
-                        </View>
-                        </View>
-                    </View>
-                </>
-            )}
-
-            <Modal
-                visible={showRenameModal}
-                transparent
-                animationType="fade"
-                onRequestClose={cancelRenamePress}
-            >
-                <View className="flex-1 justify-center items-center bg-black/40">
-                    <View className="bg-white rounded-lg p-6 w-80">
-                        <Text className="text-lg font-bold text-center mb-4">New Device ID</Text>
-                        <Text className="text-center mb-6">Please Input the new Device ID for this Device</Text>
-                        <View className="flex-row mb-10">
-                                    <View className="border border-gray-300 rounded-tl-lg rounded-bl-lg justify-center items-center px-2">
-                                        <AntDesign name={"barcode"} size={28} color="green" />
-                                    </View>
-                            <View className="flex-1 border border-gray-300 border-l-0 rounded-lg px-4 py-1">
-                                <TextInput
-                                    value={newDeviceID}
-                                    onChangeText={setNewDeviceID}
-                                    placeholder="Device ID"
-                                    keyboardType="default"
-                                    autoCapitalize="none"
-                                    className="text-gray-800"
-                                />
-                            </View>
-                        </View>
-                        <View className="flex-row justify-between">
-                            <TouchableOpacity
-                                onPress={cancelRenamePress}
-                                className="bg-gray-300 py-2 px-4 rounded-lg"
-                            >
-                                <Text className="text-center text-black font-semibold">Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={confirmRenamePress}
-                                className="bg-blue-600 py-2 px-4 rounded-lg"
-                            >
-                                <Text className="text-center text-white font-semibold">Submit</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+      {Object.keys(device).length > 0 && (
+        <ScrollView className="flex-1">
+          {/* HEADER SECTION */}
+          <View className="bg-white p-6 shadow-sm border-b border-gray-100">
+            <View className="flex-row justify-between items-center">
+              <View className="flex-1">
+                <Text className="text-3xl font-extrabold text-slate-700">{device.deviceID}</Text>
+                <View className="flex-row items-center mt-1">
+                  <Octicons name="dot-fill" size={16} color={device.isOnline ? "green" : "red"} />
+                  <Text className={`ml-2 font-bold ${device.isOnline ? "text-green-600" : "text-red-600"}`}>
+                    {device.isOnline ? "ONLINE" : "OFFLINE"}
+                  </Text>
                 </View>
-            </Modal>
-        </SafeAreaView>
-    );
-}
+              </View>
+              
+              <TouchableOpacity
+                onPress={handleRenamePress}
+                className="bg-blue-600 p-3 rounded-full shadow-lg shadow-blue-300"
+              >
+                <MaterialIcons name="edit" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <Text className="text-slate-500 font-semibold">
+                Status: <Text className="text-slate-800">{device.incubationStarted ? "Incubation Active" : "Standby Mode"}</Text>
+              </Text>
+            </View>
+          </View>
+
+          {/* MAIN SENSOR DATA */}
+          <View className="mx-4 mt-6">
+            <Text className="text-lg font-bold text-slate-800 mb-2 ml-1">Environment</Text>
+            <View className="flex-row flex-wrap -m-1">
+              <MetricCard 
+                title="Humidity" 
+                value={device.humidity} 
+                unit="%" 
+                iconName="water-percent" 
+                color="bg-blue-50" 
+              />
+              <MetricCard 
+                title="Temperature" 
+                value={device.temperature} 
+                unit="°C" 
+                iconName="temperature-celsius" 
+                color="bg-red-50" 
+              />
+            </View>
+          </View>
+
+          {/* INCUBATION & DOOR STATUS */}
+          <View className="mx-4 mt-6">
+            <Text className="text-lg font-bold text-slate-800 mb-2 ml-1">Incubation Stats</Text>
+            <View className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+              <View className="flex-row flex-wrap">
+                <MetricCard
+                  title="Day Count" 
+                  value={device.daysElapsed} 
+                  unit=" Days" 
+                  iconName="calendar-clock" 
+                  color="bg-purple-50" 
+                />
+                <MetricCard 
+                  title="Door Sensor" 
+                  value={device.doorSensor?.isClosed ? "Closed" : "Open"} 
+                  unit="" 
+                  iconName={device.doorSensor?.isClosed ? "door-closed" : "door-open"} 
+                  color={device.doorSensor?.isClosed ? "bg-green-50" : "bg-orange-50"} 
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* CONTROL STATUS */}
+          <View className="mx-4 mt-6 mb-10">
+            <Text className="text-lg font-bold text-slate-800 mb-2 ml-1">Active Controls</Text>
+            <View className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+              <View className="flex-row flex-wrap">
+                <MetricCard
+                  title="Egg Turning" 
+                  value={device.eggTurning?.mode} 
+                  unit="" 
+                  iconName="rotate-3d-variant" 
+                  color="bg-amber-50" 
+                />
+                <MetricCard 
+                  title="Internal LED" 
+                  value={device.ledLight?.manualStatus ? "ON" : "OFF"} 
+                  unit="" 
+                  iconName="lightbulb-on-outline" 
+                  color="bg-yellow-50" 
+                />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* RENAME MODAL */}
+      <Modal visible={showRenameModal} transparent animationType="fade">
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <View className="items-center mb-4">
+              <View className="bg-blue-100 p-3 rounded-full mb-2">
+                <AntDesign name="barcode" size={28} color="#2563eb" />
+              </View>
+              <Text className="text-xl font-bold text-slate-800">Rename Device</Text>
+              <Text className="text-slate-500 text-center mt-1">Enter a new unique ID for this incubator</Text>
+            </View>
+
+            <TextInput
+              value={newDeviceID}
+              onChangeText={setNewDeviceID}
+              placeholder="Ex: INCUBATOR-01"
+              className="bg-slate-100 p-4 rounded-xl text-slate-800 font-bold mb-6 border border-slate-200"
+              autoFocus
+            />
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity onPress={cancelRenamePress} className="flex-1 bg-slate-200 py-4 rounded-xl">
+                <Text className="text-center font-bold text-slate-600">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmRenamePress} className="flex-1 bg-blue-600 py-4 rounded-xl">
+                <Text className="text-center font-bold text-white">Save Changes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+};
 
 export default DeviceDetails;
