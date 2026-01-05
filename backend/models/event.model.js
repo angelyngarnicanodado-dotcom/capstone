@@ -19,54 +19,69 @@ const EventSchema = new mongoose.Schema({
         required: true,
         default: 'Data Submission'
     },
-  
-     // ===== ENVIRONMENT DATA (Matches Serial Print) =====
-  temperature: {
+    temperature: {
     type: Number,
     default: 0,
   },
+
   humidity: {
     type: Number,
     default: 0,
   },
+
   daysElapsed: {
     type: Number,
-    default: 0, // Maps to eggDay in Arduino
+    default: 0,
   },
+
   incubationStarted: {
     type: Boolean,
-    default: false, // Maps to incubationRunning in Arduino
+    default: false,
   },
 
   // ===== EGG TURNING CONTROL =====
   eggTurning: {
-    enabled: {
-      type: Boolean,
-      default: true, // Maps to turningEnabled (Serial 'A' or 'O')
+    mode: {
+      type: String,
+      enum: ["OFF", "MANUAL", "AUTO"],
+      default: "AUTO",
     },
+
+    isTurning: {
+      type: Boolean,
+      default: false,
+    },
+
     autoStopDay: {
       type: Number,
-      default: 16, // Logic in Arduino: SIXTEEN_DAYS
+      default: 16, // stop turning at day 16
     },
-    // We remove "mode" since your Arduino code currently treats it as a simple Toggle
   },
 
   // ===== LED LIGHT CONTROL =====
-  ledLight: {
-    status: {
+    ledLight: {
+  //Simple toggle: true for ON, false for OFF
+   manualStatus: {
       type: Boolean,
-      default: false, // Serial '1' or '0'
+      default: false,
     },
+
   },
 
   // ===== MAGNETIC DOOR SENSOR =====
   doorSensor: {
     isClosed: {
       type: Boolean,
-      default: false, // 1 = Closed, 0 = Open
-    }
-  },
+      default: false,
+    },
+
+    lastClosedTime: {
+      type: Number,
+      default: 0,
+    },
+  }
 });
+
 const Event=mongoose.model('Event', EventSchema);
 
 export default Event;

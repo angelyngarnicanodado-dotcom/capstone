@@ -2,22 +2,23 @@ import Device from "../models/device.model.js";
 import Event from '../models/event.model.js';
 import mongoose from "mongoose";
 
+
 export const submitData = async (req, res) => {
     // 1. Basic Validation
     if (!req.body || !req.body.deviceID) {
         return res.status(400).json({ success: false, message: "Invalid values or missing Device ID!" });
     }
 
-    // Extracting fields sent from the Arduino communication bridge
-    // Based on Arduino Serial Order: Humidity, Temperature, Turning, LED, Door, Day
+    // Extracting fields from request body based on the new Incubator Schema
     const {
         deviceID,
-        temperature,
-        humidity,
-        turningEnabled, // Received as 1 or 0
-        ledStatus,      // Received as 1 or 0
-        doorIsClosed,   // Received as 1 or 0
-        daysElapsed
+        temperature = 0,
+        humidity = 0,
+        daysElapsed = 0,
+        incubationStarted = false,
+        isTurning = false,
+        isLedOn = false,
+        isDoorClosed = false
     } = req.body;
 
     const session = await mongoose.startSession();
@@ -32,43 +33,40 @@ export const submitData = async (req, res) => {
         session.startTransaction();
 
         // 3. Update the Device document with current status
-        onRecordDevice.temperature = temperature ?? onRecordDevice.temperature;
-        onRecordDevice.humidity = humidity ?? onRecordDevice.humidity;
-        onRecordDevice.daysElapsed = daysElapsed ?? onRecordDevice.daysElapsed;
+        onRecordDevice.temperature = temperature;
+        onRecordDevice.humidity = humidity;
+        onRecordDevice.daysElapsed = daysElapsed;
+        onRecordDevice.incubationStarted = incubationStarted;
         onRecordDevice.isOnline = true;
         onRecordDevice.lastUpdate = Date.now();
-        
-        // Logical check: If the door is closed, incubation is active
-        onRecordDevice.incubationStarted = (doorIsClosed === 1 || doorIsClosed === true);
 
-        // Update Nested Objects (Convert 1/0 to Boolean)
-        onRecordDevice.eggTurning.enabled = (turningEnabled === 1 || turningEnabled === true);
-        onRecordDevice.ledLight.status = (ledStatus === 1 || ledStatus === true);
+        // Update Nested Objects
+        onRecordDevice.eggTurning.isTurning = isTurning;
+        onRecordDevice.ledLight.isOn = isLedOn;
         
         // Update Door Sensor logic
-        const currentDoorState = (doorIsClosed === 1 || doorIsClosed === true);
-        if (onRecordDevice.doorSensor.isClosed !== currentDoorState) {
-            onRecordDevice.doorSensor.isClosed = currentDoorState;
-            if (currentDoorState) {
+        if (onRecordDevice.doorSensor.isClosed !== isDoorClosed) {
+            onRecordDevice.doorSensor.isClosed = isDoorClosed;
+            if (isDoorClosed) {
                 onRecordDevice.doorSensor.lastClosedTime = Date.now();
             }
         }
 
         await onRecordDevice.save({ session });
 
-        // 4. Create an Event record for historical tracking (Graphing)
+        // 4. Create an Event record for historical tracking
         const newEvent = new Event({
             device: onRecordDevice._id,
             eventDate: Date.now(),
-            eventType: 'Periodic Sync',
+            eventType: 'Data Submission',
             temperature: temperature,
             humidity: humidity,
             daysElapsed: daysElapsed,
-            incubationStarted: onRecordDevice.incubationStarted,
-            // Saving current snapshots into the event historical record
-            eggTurning: { enabled: onRecordDevice.eggTurning.enabled },
-            ledLight: { status: onRecordDevice.ledLight.status },
-            doorSensor: { isClosed: currentDoorState }
+            incubationStarted: incubationStarted,
+            // Saving current snapshots into the event
+            eggTurning: { isTurning: isTurning },
+            ledLight: { isOn: isLedOn },
+            doorSensor: { isClosed: isDoorClosed }
         });
 
         await newEvent.save({ session });
@@ -85,23 +83,33 @@ export const submitData = async (req, res) => {
     } finally {
         await session.endSession();
     }
-};
+    return res;
+}
 
-// --- Historical Records Retrieval (Stays largely the same) ---
 export const getSensorReadingRecords = async(req, res) =>{
-    if(!req.body) return res.status(400).json({success: false, message: "Invalid values!"});
+    if(!req.body){
+        return res.status(400).json({success: false, message: "Invalid values!"});
+    }
 
-    const { deviceID, startDate, endDate, _id: ownerID } = req.body;
+    
+    const deviceID = req.body.deviceID;
+    const startDate = req.body.startDate;
+    const endDate = req.body.endDate;
+    const ownerID = req.body._id;
+
     const pipeline = [];
+
     const initialMatch = {};
 
     if (startDate || endDate) {
         initialMatch.eventDate = {}; 
+
         if (startDate) {
             const sDate = new Date(startDate);
             sDate.setHours(0, 0, 0, 0); 
             initialMatch.eventDate.$gte = sDate.getTime();
         }
+
         if (endDate) {
             const eDate = new Date(endDate);
             eDate.setHours(23, 59, 59, 999);
@@ -109,81 +117,240 @@ export const getSensorReadingRecords = async(req, res) =>{
         }
     }
 
-    if (!mongoose.isValidObjectId(ownerID)) return res.status(401).json({ success: false, message: "Auth failed!" });
+    if (!mongoose.isValidObjectId(ownerID)) {
+        return res.status(200).json({ success: false, message: "Authentication failed!" });
+    }
 
-    if (Object.keys(initialMatch).length > 0) pipeline.push({ $match: initialMatch });
+    if (Object.keys(initialMatch).length > 0) {
+        pipeline.push({ $match: initialMatch });
+    }
 
     pipeline.push({
         $lookup: {
             from: "devices",
-            localField: "device",
-            foreignField: "_id",
+            let: { deviceId: "$device" },
+            pipeline: [
+            {
+                $match: {
+                $expr: { $eq: ["$_id", "$$deviceId"] }
+                }
+            },
+            {
+                $project: {
+                _id: 1,
+                deviceID: 1,
+                owner: 1
+                }
+            }
+            ],
             as: "device"
         }
-    }, { $unwind: "$device" });
+        },
+        {
+        $addFields: {
+            device: { $first: "$device" }
+        }
+    });
 
-    const secondaryMatch = { "device.owner": new mongoose.Types.ObjectId(ownerID) };
-    if (deviceID && deviceID !== "null") secondaryMatch["device.deviceID"] = deviceID;
+    const secondaryMatch = {};
+
+    secondaryMatch["device.owner"] = new mongoose.Types.ObjectId(ownerID);
+
+    if (deviceID && deviceID.trim() !== "" && deviceID !== "null") {
+        secondaryMatch["device.deviceID"] = deviceID;
+    }
 
     pipeline.push({ $match: secondaryMatch });
 
     try {
         const response = await Event.aggregate(pipeline);
+        
+        if (!response || response.length < 1) {
+            return res.status(200).json({ success: false, message: "No Device Record found!" });
+        }
+
         res.status(200).json({ success: true, data: response });
     } catch (error) {
+        console.error("Error in retrieving Device Records! - " + error.message);
         res.status(500).json({ success: false, message: "Server Error" });
     }
-};
 
-// --- Hourly Temperature Summary for Dashboard Graphs ---
+    return res;
+}
+
+/*
+export const getTemperatureSummary = async(req, res) =>{
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const ownerID = req.body._id;
+
+    if (!mongoose.isValidObjectId(ownerID)) {
+        return res.status(200).json({ success: false, message: "Authentication failed!" });
+    }
+
+    try{
+        const response = await Event.aggregate([
+            {
+                $lookup: {
+                    from: "devices",
+                    let: { deviceId: "$device" },
+                    pipeline: [
+                    {
+                        $match: {
+                        $expr: { $eq: ["$_id", "$$deviceId"] }
+                        }
+                    },
+                    {
+                        $project: {
+                        _id: 1,
+                        deviceID: 1,
+                        owner: 1
+                        }
+                    }
+                    ],
+                    as: "device"
+                }
+                },
+                {
+                $addFields: {
+                    device: { $first: "$device" }
+                }
+            },{
+                $match: {
+                    eventDate: { $gte: sevenDaysAgo }
+                }
+            },{
+                $sort: { eventDate: 1 }
+            },{
+                $group: {
+                _id: "$device",
+                temperatures: {
+                    $push: {
+                    date: "$eventDate",
+                    value: "$temperature"
+                    }
+                }
+                }
+            },{
+                $project: {
+                _id: 0,
+                device: "$_id",
+                temperatures: 1
+                }
+            },{
+                $match: {
+                    "device.owner": new mongoose.Types.ObjectId(ownerID)
+                }
+            }
+        ]);
+
+        if (!response || response.length < 1) {
+            return res.status(200).json({ success: false, message: "No temperature record found from the last 7 days!" });
+        }
+
+        res.status(200).json({ success: true, data: response });
+    }catch(error){
+        console.log("Error in retrieving the temperature summary from 7 days ago! - "+error.message);
+        res.status(200).json({success: false, message: "Server Error!"});
+    }
+
+    return res;
+}*/
+
 export const getTemperatureSummary = async (req, res) => {
   const ownerID = req.body._id;
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  if (!mongoose.isValidObjectId(ownerID)) return res.status(401).json({ success: false, message: "Auth failed!" });
+  if (!mongoose.isValidObjectId(ownerID)) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed!"
+    });
+  }
 
   try {
     const response = await Event.aggregate([
-      { $addFields: { eventDateObj: { $toDate: "$eventDate" } } },
-      { $match: { eventDateObj: { $gte: twentyFourHoursAgo } } },
-      { $lookup: { from: "devices", localField: "device", foreignField: "_id", as: "device" } },
-      { $unwind: "$device" },
-      { $match: { "device.owner": new mongoose.Types.ObjectId(ownerID) } },
       {
+        $addFields: {
+          eventDateObj: { $toDate: "$eventDate" }
+        }
+      },{
+        $match: {
+          eventDateObj: { $gte: twentyFourHoursAgo }
+        }
+      },{
+        $lookup: {
+          from: "devices",
+          localField: "device",
+          foreignField: "_id",
+          as: "device"
+        }
+      },
+      { $unwind: "$device" },{
+        $match: {
+          "device.owner": new mongoose.Types.ObjectId(ownerID)
+        }
+      },{
         $group: {
           _id: {
             device: "$device._id",
-            hour: { $dateTrunc: { date: "$eventDateObj", unit: "hour" } }
+            hour: {
+              $dateTrunc: {
+                date: "$eventDateObj",
+                unit: "hour"
+              }
+            }
           },
           avgTemp: { $avg: "$temperature" },
           device: { $first: "$device" }
         }
-      },
-      { $sort: { "_id.hour": 1 } },
-      {
+      },{
+        $densify: {
+          field: "_id.hour",
+          range: {
+            step: 1,
+            unit: "hour",
+            bounds: [twentyFourHoursAgo, now]
+          }
+        }
+      },{
+        $fill: {
+          output: {
+            avgTemp: { value: 0 }
+          }
+        }
+      },{
         $group: {
           _id: "$_id.device",
           device: { $first: "$device" },
           temperatures: {
             $push: {
-              hour: { $dateToString: { format: "%H:00", date: "$_id.hour" } },
-              value: { $round: ["$avgTemp", 1] }
+              hour: {
+                $dateToString: { format: "%H", date: "$_id.hour" }
+              },
+              value: { $round: ["$avgTemp", 2] }
             }
           }
         }
-      },
-      {
+      },{
         $project: {
           _id: 0,
-          device: { _id: "$device._id", deviceID: "$device.deviceID" },
+          device: {
+            _id: "$device._id",
+            deviceID: "$device.deviceID"
+          },
           temperatures: 1
         }
       }
     ]);
 
     return res.status(200).json({ success: true, data: response });
+
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server Error!" });
+    console.error("Hourly temperature aggregation error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error!"
+    });
   }
 };
