@@ -146,7 +146,7 @@ const ProfileTab =()=>{
                       className="w-full flex flex-col"
             >
                 
-              <View className="flex flex-row  items-center gap-5 px-5 py-4 bg-amber-400 shadow-sm border-b border-gray-500 pt-10">
+              <View className="flex flex-row  items-center gap-5 px-5 py-4 bg-amber-200 shadow-sm border-b border-teal-500 pt-10">
                              <Image source={logo} style={{ width: 50, height: 50 }} />
                     <Text className="text-3xl font-extrabold text-teal-800">Profile</Text>
                 </View>
@@ -173,7 +173,7 @@ const ProfileTab =()=>{
                         
                         <TouchableOpacity
                             onPress={()=>{setNextRoute("/UpdatePersonalInfo"); handleValidatePasswordPress(); }}
-                            className="flex flex-row  gap-2 bg-blue-600 py-4 px-8 rounded-lg mx-6"
+                            className="flex flex-row  gap-2 bg-teal-500 py-4 px-8 rounded-lg mx-6"
                         >
                             <MaterialIcons name={"account-circle"} size={28} color="white" />
                             <Text className="text-white text-center font-semibold text-lg">
@@ -182,7 +182,7 @@ const ProfileTab =()=>{
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={()=>{setNextRoute("/UpdatePassword"); handleValidatePasswordPress(); }}
-                            className="flex flex-row gap-2 bg-blue-600 py-4 px-8 rounded-lg mx-6"
+                            className="flex flex-row gap-2 bg-teal-500 py-4 px-8 rounded-lg mx-6"
                         >
                             <MaterialIcons name={"lock"} size={28} color="white" />
                             <Text className="text-white text-center font-semibold text-lg">
@@ -194,7 +194,7 @@ const ProfileTab =()=>{
                     <View className="flex-1 mx-auto w-full h-auto gap-4 mt-10 items-end">
                         <TouchableOpacity
                             onPress={handleLogoutPress}
-                            className="flex flex-row gap-2 bg-gray-600 py-4 px-8 rounded-lg mx-6 w-fit"
+                            className="flex flex-row gap-2 bg-gray-400 py-4 px-8 rounded-lg mx-6 w-fit border border-teal-500"
                         >
                             <MaterialIcons name={"logout"} size={28} color="white" />
                             <Text className="text-white text-center font-semibold text-lg">

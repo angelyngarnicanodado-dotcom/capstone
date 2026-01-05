@@ -124,13 +124,13 @@ const LogScreen = () => {
       {isLoading && <LoadingOverlay />}
 
       {/* Header */}
-      <View className="flex flex-row items-center gap-5 px-5 py-4 bg-amber-400 border-b border-amber-500">
+      <View className="flex flex-row items-center gap-5 px-5 py-4 bg-amber-200 border-b border-teal-500 pt-10">
         <Image source={logo} style={{ width: 50, height: 50 }} />
         <Text className="text-2xl font-black text-teal-900">Logs</Text>
       </View>
 
       {/* Search Filters */}
-      <View className="p-4 mx-3 my-3 bg-white rounded-xl border border-gray-200">
+      <View className="p-4 mx-3 my-3 bg-white rounded-xl border border-amber-500">
         <View className="flex-row items-center mb-4">
           <Text className="text-gray-500 font-bold mr-2">Device:</Text>
           <View className="flex-1 border border-gray-300 rounded-lg overflow-hidden">
@@ -150,7 +150,7 @@ const LogScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={searchEvents} className="bg-teal-900 py-3 rounded-lg"><Text className="text-center text-white font-bold">Search</Text></TouchableOpacity>
+        <TouchableOpacity onPress={searchEvents} className="bg-teal-500 py-3 rounded-lg"><Text className="text-center text-white font-bold">Search</Text></TouchableOpacity>
       </View>
 
       {/* --- THE TABLE SECTION --- */}

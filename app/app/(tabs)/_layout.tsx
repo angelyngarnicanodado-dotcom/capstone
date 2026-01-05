@@ -12,7 +12,7 @@ export default function _Layout() {
                 justifyContent: 'center', 
                 alignItems: 'center'},
             tabBarStyle: {
-                backgroundColor: '#fbbf24',
+                backgroundColor: '#FDE68A',
                 paddingHorizontal: 20,
                 paddingBottom: 50,
                 paddingTop: 5,
@@ -20,7 +20,7 @@ export default function _Layout() {
                 position: "absolute",
                 overflow: "hidden",
                 borderWidth: 1,
-                borderColor: '#0d2314ff'
+                borderColor: '#14B8A6'
             },
             tabBarLabelStyle: {
                 fontSize: 12,

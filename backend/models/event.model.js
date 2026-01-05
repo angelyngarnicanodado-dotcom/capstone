@@ -59,21 +59,11 @@ const EventSchema = new mongoose.Schema({
   },
 
   // ===== LED LIGHT CONTROL =====
-  ledLight: {
-    mode: {
-      type: String,
-      enum: ["OFF", "MANUAL", "AUTO"],
-      default: "AUTO",
-    },
-
-    isOn: {
-      type: Boolean,
+    ledLight: {
+  //Simple toggle: true for ON, false for OFF
+   manualStatus: {
+      type: boolean,
       default: false,
-    },
-
-    autoStopDay: {
-      type: Number,
-      default: 10, // stop LED at day 10
     },
   },
 

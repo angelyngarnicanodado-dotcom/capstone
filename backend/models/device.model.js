@@ -63,25 +63,13 @@ const DeviceSchema = new mongoose.Schema({
       default: 16, // stop turning at day 16
     },
   },
-
-  // ===== LED LIGHT CONTROL =====
-  ledLight: {
-    mode: {
-      type: String,
-      enum: ["OFF", "MANUAL", "AUTO"],
-      default: "AUTO",
-    },
-
-    isOn: {
-      type: Boolean,
+// ===== LED LIGHT CONTROL =====
+    ledLight: {
+  //Simple toggle: true for ON, false for OFF
+   manualStatus: {
+      type: boolean,
       default: false,
     },
-
-    autoStopDay: {
-      type: Number,
-      default: 10, // stop LED at day 10
-    },
-  },
 
   // ===== MAGNETIC DOOR SENSOR =====
   doorSensor: {
