@@ -139,19 +139,19 @@ const ProfileTab =()=>{
     };
 
     return(
-        <SafeAreaView className="flex-1 bg-gray-100">
+        <SafeAreaView className="flex-1 bg-amber-100">
             {isLoading && loadingOverlay()}
             <ScrollView
                       showsVerticalScrollIndicator={false}
                       className="w-full flex flex-col"
             >
                 
-              <View className="flex flex-row  items-center gap-5 px-5 py-4 bg-amber-200 shadow-sm border-b border-teal-500 pt-10">
+              <View className="flex flex-row  items-center gap-5 px-5 py-4 bg-teal-500 shadow-sm border-b border-amber-500 pt-10">
                              <Image source={logo} style={{ width: 50, height: 50 }} />
-                    <Text className="text-3xl font-extrabold text-teal-800">Profile</Text>
+                    <Text className="text-3xl font-extrabold text-amber-200">Profile</Text>
                 </View>
 
-                <View className="px-7 py-10 mx-5 my-5 bg-white shadow-sm border-b border-gray-100 rounded-lg">
+                <View className="px-7 py-10 mx-5 my-5 bg-white shadow-sm border-b border-amber-500 rounded-lg">
                     <View className="flex flex-row w-full h-auto gap-4 my-2">
                         <Text className="text-black font-bold text-xl">Email:</Text>
                         <Text className="text-gray-700 text-lg">{personalData.emailAddress}</Text>
@@ -194,7 +194,7 @@ const ProfileTab =()=>{
                     <View className="flex-1 mx-auto w-full h-auto gap-4 mt-10 items-end">
                         <TouchableOpacity
                             onPress={handleLogoutPress}
-                            className="flex flex-row gap-2 bg-gray-400 py-4 px-8 rounded-lg mx-6 w-fit border border-teal-500"
+                            className="flex flex-row gap-2 bg-amber-500 py-4 px-8 rounded-lg mx-6 w-fit border border-teal-500"
                         >
                             <MaterialIcons name={"logout"} size={28} color="white" />
                             <Text className="text-white text-center font-semibold text-lg">
@@ -219,13 +219,13 @@ const ProfileTab =()=>{
                     <View className="flex-row justify-between">
                     <TouchableOpacity
                         onPress={cancelLogout}
-                        className="bg-gray-300 py-2 px-4 rounded-lg"
+                        className="bg-teal-500 py-2 px-4 rounded-lg"
                     >
                         <Text className="text-center text-black font-semibold">Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={confirmLogout}
-                        className="bg-red-600 py-2 px-4 rounded-lg"
+                        className="bg-amber-500 py-2 px-4 rounded-lg"
                     >
                         <Text className="text-center text-white font-semibold">Logout</Text>
                     </TouchableOpacity>

@@ -130,13 +130,13 @@ const DevicesTab = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-100">
+        <SafeAreaView className="flex-1 bg-amber-100">
             {isLoading && loadingOverlay()}
 
             {/* HEADER */}
-            <View className="flex flex-row items-center gap-5 px-5 py-4 bg-amber-200 shadow-sm border-b border-teal-500 pt-10">
+            <View className="flex flex-row items-center gap-5 px-5 py-4 bg-teal-500 shadow-sm border-b border-amber-500 pt-10">
                 <Image source={logo} style={{ width: 50, height: 50 }} />
-                <Text className="text-3xl font-extrabold text-teal-800">
+                <Text className="text-3xl font-extrabold text-amber-200">
                     Devices
                 </Text>
             </View>
@@ -162,7 +162,7 @@ const DevicesTab = () => {
                 >
                     <AntDesign name="camera" size={30} color="white" />
                     <Text className="text-white font-semibold text-sm">
-                        Open cam
+                        Monitoring Cam
                     </Text>
                 </TouchableOpacity>
             </View>

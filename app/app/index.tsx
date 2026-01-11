@@ -84,7 +84,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 w-full min-w-full bg-white">
+    <SafeAreaView className="flex-1 w-full min-w-full bg-amber-100">
       {isLoading && loadingOverlay()}
       <KeyboardAvoidingView
         className="flex-1 justify-center px-6"
@@ -105,11 +105,11 @@ export default function LoginScreen() {
         </View>
 
         <View className="relative w-full h-auto flex flex-row mb-4">
-            <View className="border border-gray-300 border-l-1 mr-[-3] rounded-tl-lg rounded-bl-lg justify-center items-center px-2">
+            <View className="border border-teal-500 border-l-1 mr-[-3] rounded-tl-lg rounded-bl-lg justify-center items-center px-2">
                 <MaterialIcons name="email" size={30} color="green" />
             </View>
           
-          <View className="flex-1 border border-gray-300 border-l-0 rounded-lg px-4 py-1">
+          <View className="flex-1 border border-teal-500 border-l-0 rounded-lg px-4 py-1">
             <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -123,10 +123,10 @@ export default function LoginScreen() {
         </View>
 
         <View className="relative w-full h-auto flex flex-row mb-4">
-            <View className="border border-gray-300 border-l-1 mr-[-3] rounded-tl-lg rounded-bl-lg justify-center items-center px-2">
+            <View className="border border-teal-500 border-l-1 mr-[-3] rounded-tl-lg rounded-bl-lg justify-center items-center px-2">
                 <MaterialIcons name="lock" size={30} color="green" />
             </View>
-          <View className="flex-1 border border-gray-300 border-l-0 rounded-lg px-4 py-1">
+          <View className="flex-1 border border-teal-500 border-l-0 rounded-lg px-4 py-1">
             <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -139,7 +139,7 @@ export default function LoginScreen() {
 
         <Link href="/OTPRequestScreen" asChild>
           <TouchableOpacity className="self-end mb-6">
-            <Text className="text-blue-600 font-medium">
+            <Text className="text-teal-500 font-medium">
               Forgot Password?
             </Text>
           </TouchableOpacity>
@@ -147,7 +147,7 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           onPress={handleLogin}
-          className="bg-blue-600 py-4 rounded-lg mb-6"
+          className="bg-teal-500 py-4 rounded-lg mb-6"
         >
           <Text className="text-white text-center font-semibold text-lg">
             Login
@@ -158,7 +158,7 @@ export default function LoginScreen() {
           <Text className="text-gray-600">Don’t have an account? </Text>
           <Link href="/SignupScreen" asChild>
             <TouchableOpacity>
-              <Text className="text-blue-600 font-semibold">
+              <Text className="text-teal-500 font-semibold">
                 Sign Up
               </Text>
             </TouchableOpacity>

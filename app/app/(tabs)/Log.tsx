@@ -120,13 +120,13 @@ const LogScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-amber-100">
       {isLoading && <LoadingOverlay />}
 
       {/* Header */}
-      <View className="flex flex-row items-center gap-5 px-5 py-4 bg-amber-200 border-b border-teal-500 pt-10">
+      <View className="flex flex-row items-center gap-5 px-5 py-4 bg-teal-500 border-b border-amber-500 pt-10">
         <Image source={logo} style={{ width: 50, height: 50 }} />
-        <Text className="text-2xl font-black text-teal-900">Logs</Text>
+        <Text className="text-3xl font-black text-amber-200">Logs</Text>
       </View>
 
       {/* Search Filters */}
